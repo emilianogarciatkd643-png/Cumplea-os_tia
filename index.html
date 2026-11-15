@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pasaporte Mágico | Tía Magnolia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-night: #080f1a;
+      --card-sand: #faf6ee;
+      --gold: #c9a24b;
+      --gold-light: #f3dfa2;
+      --ocean: #1b6b7a;
+      --ink: #1c2430;
+      --muted: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-night);
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(27, 107, 122, 0.3), transparent 45%),
+        radial-gradient(circle at 85% 90%, rgba(201, 162, 75, 0.22), transparent 45%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px 14px 60px;
+      overflow-x: hidden;
+    }
+
+    /* Chispas mágicas al tocar la pantalla */
+    .tap-spark {
+      position: fixed;
+      pointer-events: none;
+      font-size: 16px;
+      z-index: 999;
+      animation: sparkBurst 0.75s ease-out forwards;
+    }
+
+    @keyframes sparkBurst {
+      0% { transform: translate(-50%, -50%) scale(0.4) rotate(0deg); opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2) rotate(140deg); opacity: 0; }
+    }
+
+    /* Destello de teletransportación (Portkey) */
+    .flash-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, #fffbe6 0%, #38bdf8 60%, transparent 100%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+      transition: opacity 0.45s ease;
+    }
+
+    .flash-overlay.active {
+      opacity: 0.9;
+    }
+
+    /* Elementos flotantes de fondo */
+    .floating-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .sparkle {
+      position: absolute;
+      color: var(--gold-light);
+      opacity: 0.4;
+      animation: floatUp 7s ease-in-out infinite;
+    }
+
+    @keyframes floatUp {
+      0%, 100% { transform: translateY(0) rotate(0deg) scale(0.9); opacity: 0.2; }
+      50% { transform: translateY(-22px) rotate(25deg) scale(1.2); opacity: 0.8; }
+    }
+
+    /* Contenedor Mobile-First */
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      perspective: 1200px;
+    }
+
+    /* Boarding Pass / Pasaporte con brillo holográfico */
+    .ticket {
+      background: var(--card-sand);
+      border-radius: 24px;
+      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+      border: 1.5px solid rgba(201, 162, 75, 0.55);
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out;
+    }
+
+    .ticket-sheen {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 244, 200, 0.35), transparent 60%);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .ticket-header {
+      background: linear-gradient(135deg, #0f1b2e 0%, #163e4f 100%);
+      color: #fff;
+      padding: 20px 22px 18px;
+      border-bottom: 2px solid var(--gold);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .airline-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--gold-light);
+      text-transform: uppercase;
+    }
+
+    .flight-code {
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 1px;
+      color: #e2e8f0;
+    }
+
+    .ticket-body {
+      padding: 22px;
+      position: relative;
+    }
+
+    .route {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .port-code {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .port-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .route-line {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--ocean);
+      padding: 0 10px;
+    }
+
+    .route-line span {
+      height: 1px;
+      flex: 1;
+      border-top: 1.5px dashed #cbd5e1;
+    }
+
+    .passenger-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .field-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    .field-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-top: 2px;
+    }
+
+    /* Separador perforado tipo boleto */
+    .perforation {
+      position: relative;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+    }
+
+    .perforation::before,
+    .perforation::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-night);
+      top: 0;
+    }
+
+    .perforation::before { left: -12px; }
+    .perforation::after { right: -12px; }
+
+    .perforation-line {
+      width: 100%;
+      border-top: 2px dashed #d6cfc2;
+    }
+
+    /* Sección de Sello Interactivo */
+    .stamp-zone {
+      padding: 12px 22px 22px;
+      text-align: center;
+      position: relative;
+      z-index: 6;
+    }
+
+    .stamp-btn {
+      width: 100%;
+      padding: 14px 18px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #1b6b7a, #124854);
+      color: #fff;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(27, 107, 122, 0.35);
+      transition: transform 0.2s ease;
+    }
+
+    .stamp-btn:active {
+      transform: scale(0.97);
+    }
+
+    .stamp-btn.stamped {
+      background: #e5dec9;
+      color: #7c6f55;
+      box-shadow: none;
+      cursor: default;
+    }
+
+    /* Sello visual */
+    .magic-stamp {
+      position: absolute;
+      top: -42px;
+      right: 22px;
+      width: 108px;
+      height: 108px;
+      border: 3px double rgba(180, 62, 52, 0.85);
+      border-radius: 50%;
+      color: rgba(180, 62, 52, 0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.25;
+      padding: 8px;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(2.4) rotate(-25deg);
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .magic-stamp.visible {
+      opacity: 1;
+      transform: scale(1) rotate(-14deg);
+    }
+
+    /* Contenido desbloqueable */
+    .unlocked-content {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+      animation: fadeSlideIn 0.6s ease forwards;
+    }
+
+    .unlocked-content.active {
+      display: flex;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tarjeta de felicitación principal */
+    .wish-card {
+      background: rgba(250, 246, 238, 0.97);
+      border-radius: 22px;
+      padding: 24px 20px;
+      text-align: center;
+      border: 1px solid rgba(201, 162, 75, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wish-icons {
+      font-size: 22px;
+      letter-spacing: 8px;
+      margin-bottom: 10px;
+      animation: gentleBounce 2.5s ease-in-out infinite;
+    }
+
+    @keyframes gentleBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .wish-title {
+      font-family: 'Cinzel', serif;
+      font-size: 21px;
+      color: var(--ink);
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .wish-sub {
+      font-size: 13px;
+      color: var(--ocean);
+      font-weight: 600;
+    }
+
+    /* Barra de progreso de recuerdos */
+    .progress-bar-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(201, 162, 75, 0.25);
+      padding: 10px 14px;
+      border-radius: 14px;
+      color: var(--gold-light);
+      font-size: 12px;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .dot.done {
+      background: var(--gold-light);
+      box-shadow: 0 0 8px var(--gold);
+    }
+
+    /* Galería de 4 Sellos / Postales interactivas */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .flip-card {
+      background: transparent;
+      height: 215px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+
+    .flip-card.flipped .flip-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-front,
+    .flip-back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(201, 162, 75, 0.4);
+    }
+
+    .flip-front {
+      background: #162235;
+    }
+
+    .flip-front img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-badge {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      background: rgba(11, 19, 32, 0.74);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 8px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .flip-back {
+      background: var(--card-sand);
+      color: var(--ink);
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .flip-back-icon {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .flip-back p {
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    /* Sección Secreta Final: Traslador / Cupón VIP */
+    .portkey-section {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      padding-top: 6px;
+      animation: fadeSlideIn 0.6s ease forwards;
+    }
+
+    .portkey-section.unlocked {
+      display: flex;
+    }
+
+    .portkey-btn {
+      background: linear-gradient(135deg, #c9a24b, #f3dfa2, #c9a24b);
+      background-size: 200% auto;
+      color: #162235;
+      border: none;
+      padding: 15px 22px;
+      border-radius: 999px;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.8px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(201, 162, 75, 0.5);
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 18px rgba(201, 162, 75, 0.45); }
+      50% { transform: scale(1.04); box-shadow: 0 0 30px rgba(243, 223, 162, 0.85); }
+    }
+
+    .vip-voucher {
+      display: none;
+      width: 100%;
+      background: linear-gradient(135deg, #132238 0%, #1b4d5c 100%);
+      border: 1.5px solid var(--gold);
+      border-radius: 22px;
+      padding: 24px 18px;
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+      animation: fadeSlideIn 0.5s ease forwards;
+    }
+
+    .vip-voucher.show {
+      display: block;
+    }
+
+    .voucher-tag {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 6px;
+    }
+
+    .voucher-title {
+      font-family: 'Cinzel', serif;
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .voucher-desc {
+      font-size: 14px;
+      color: #e2e8f0;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .voucher-code {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px dashed var(--gold-light);
+      padding: 7px 14px;
+      border-radius: 10px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: var(--gold-light);
+    }
+
+    .claim-hint {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    /* Confeti minimalista en canvas */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="flash-overlay" id="flashOverlay"></div>
+  <div class="floating-bg" id="floating-bg"></div>
+  <canvas id="confetti-canvas"></canvas>
+
+  <main class="app-shell">
+    <!-- Boleto / Pasaporte Mágico -->
+    <section class="ticket" id="ticketCard">
+      <div class="ticket-sheen"></div>
+      <div class="ticket-header">
+        <span class="airline-tag">✦ Wizarding Air ✦</span>
+        <span class="flight-code">VUELO 9 ¾</span>
+      </div>
+
+      <div class="ticket-body">
+        <div class="route">
+          <div>
+            <div class="port-code">HGM</div>
+            <div class="port-label">Hogwarts</div>
+          </div>
+          <div class="route-line">
+            <span></span>
+            ✈
+            <span></span>
+          </div>
+          <div style="text-align: right;">
+            <div class="port-code">PLY</div>
+            <div class="port-label">Playa & Aventura</div>
+          </div>
+        </div>
+
+        <div class="passenger-grid">
+          <div>
+            <div class="field-label">Pasajera VIP</div>
+            <div class="field-value">Tía Magnolia</div>
+          </div>
+          <div>
+            <div class="field-label">Motivo</div>
+            <div class="field-value">Cumpleaños ✨</div>
+          </div>
+        </div>
+
+        <!-- Sello animado -->
+        <div class="magic-stamp" id="magicStamp">
+          APROBADO<br>✦ MAGIA ✦<br>FELIZ CUMPLE
+        </div>
+      </div>
+
+      <div class="perforation">
+        <div class="perforation-line"></div>
+      </div>
+
+      <div class="stamp-zone">
+        <button class="stamp-btn" id="stampBtn">
+          🪄 Sellar Pasaporte
+        </button>
+      </div>
+    </section>
+
+    <!-- Sección que aparece al sellar -->
+    <section class="unlocked-content" id="unlockedContent">
+      <div class="wish-card">
+        <div class="wish-icons">✨ 🏖️ 🪄 ✈️ ✨</div>
+        <h1 class="wish-title">Feliz cumple tía, pásatela bien en tu viaje</h1>
+        <p class="wish-sub">Que este nuevo año esté lleno de magia y buenos destinos</p>
+      </div>
+
+      <!-- Barra de progreso interactiva -->
+      <div class="progress-bar-wrap">
+        <span id="progressText">Toca las 4 postales (0/4)</span>
+        <div class="progress-dots">
+          <span class="dot" id="dot-0"></span>
+          <span class="dot" id="dot-1"></span>
+          <span class="dot" id="dot-2"></span>
+          <span class="dot" id="dot-3"></span>
+        </div>
+      </div>
+
+      <div class="gallery-grid">
+        <!-- Foto 1: Playa -->
+        <div class="flip-card" data-index="0">
+          <div class="flip-inner">
+            <div class="flip-front">
+              <img src="foto1.png" alt="En la playa">
+              <div class="photo-badge">🏖️ Destino 01</div>
+            </div>
+            <div class="flip-back">
+              <div class="flip-back-icon">🌊</div>
+              <p>Sol, playa y los mejores momentos en familia.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foto 2: Mundial -->
+        <div class="flip-card" data-index="1">
+          <div class="flip-inner">
+            <div class="flip-front">
+              <img src="foto2.png" alt="Viendo el mundial">
+              <div class="photo-badge">⚽ Destino 02</div>
+            </div>
+            <div class="flip-back">
+              <div class="flip-back-icon">🏆</div>
+              <p>Viendo el Mundial "juntos"Siempre el mejor equipo!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foto 3: Boliche -->
+        <div class="flip-card" data-index="2">
+          <div class="flip-inner">
+            <div class="flip-front">
+              <img src="foto3.png" alt="En el boliche">
+              <div class="photo-badge">🎳 Destino 03</div>
+            </div>
+            <div class="flip-back">
+              <div class="flip-back-icon">✨</div>
+              <p>Tarde de boliche y puras risas en familia.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foto 4: Barco -->
+        <div class="flip-card" data-index="3">
+          <div class="flip-inner">
+            <div class="flip-front">
+              <img src="foto_4.png" alt="En el barco de paseo">
+              <div class="photo-badge">⛵ Destino 04</div>
+            </div>
+            <div class="flip-back">
+              <div class="flip-back-icon">🧭</div>
+              <p>Paseo en barco y listos para la siguiente aventura.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sorpresa desbloqueable al voltear las 4 fotos -->
+      <div class="portkey-section" id="portkeySection">
+        <button class="portkey-btn" id="portkeyBtn">✨ Tocar Traslador Secreto ✨</button>
+
+        <div class="vip-voucher" id="vipVoucher">
+          <div class="voucher-tag">✦ Pase Dorado Desbloqueado ✦</div>
+          <h2 class="voucher-title">☕ Vale para café gratis</h2>
+          <p class="voucher-desc">Con este vale mi tío te va a invitar un café.</p>
+          <span class="voucher-code">CÓDIGO: MAGNOLIA-VIP</span>
+          <p class="claim-hint">📸 Tómale captura de pantalla para hacerlo válido</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // 1. Chispas mágicas cada vez que toca la pantalla
+    document.addEventListener('pointerdown', (e) => {
+      const sparkChars = ['✦', '✨', '⋆', '⚡'];
+      for (let i = 0; i < 5; i++) {
+        const spark = document.createElement('span');
+        spark.className = 'tap-spark';
+        spark.textContent = sparkChars[Math.floor(Math.random() * sparkChars.length)];
+        spark.style.left = e.clientX + 'px';
+        spark.style.top = e.clientY + 'px';
+        spark.style.color = i % 2 === 0 ? '#f3dfa2' : '#38bdf8';
+        const angle = (Math.PI * 2 * i) / 5 + Math.random() * 0.5;
+        const dist = 28 + Math.random() * 25;
+        spark.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+        spark.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+        document.body.appendChild(spark);
+        setTimeout(() => spark.remove(), 750);
+      }
+    });
+
+    // 2. Generar elementos animados flotantes alrededor
+    const floatingBg = document.getElementById('floating-bg');
+    const symbols = ['✦', '✧', '⋆', '✨', '🐚', '⚡', '🧭'];
+    for (let i = 0; i < 24; i++) {
+      const el = document.createElement('span');
+      el.className = 'sparkle';
+      el.textContent = symbols[i % symbols.length];
+      el.style.left = Math.random() * 100 + '%';
+      el.style.top = Math.random() * 100 + '%';
+      el.style.animationDelay = (Math.random() * 5) + 's';
+      el.style.fontSize = (11 + Math.random() * 11) + 'px';
+      floatingBg.appendChild(el);
+    }
+
+    // 3. Efecto 3D + brillo holográfico en el boleto
+    const ticketCard = document.getElementById('ticketCard');
+    ticketCard.addEventListener('pointermove', (e) => {
+      const rect = ticketCard.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const rotateX = ((y - centerY) / centerY) * -6;
+      const rotateY = ((x - centerX) / centerX) * 6;
+
+      ticketCard.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
+      ticketCard.style.setProperty('--my', `${(y / rect.height) * 100}%`);
+      ticketCard.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+
+    ticketCard.addEventListener('pointerleave', () => {
+      ticketCard.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    });
+
+    // 4. Acción de sellar pasaporte
+    const stampBtn = document.getElementById('stampBtn');
+    const magicStamp = document.getElementById('magicStamp');
+    const unlockedContent = document.getElementById('unlockedContent');
+    let isStamped = false;
+
+    stampBtn.addEventListener('click', () => {
+      if (isStamped) return;
+      isStamped = true;
+
+      if (navigator.vibrate) navigator.vibrate(40);
+      magicStamp.classList.add('visible');
+      stampBtn.textContent = '✓ Pasaporte Sellado';
+      stampBtn.classList.add('stamped');
+
+      launchConfetti(80);
+
+      setTimeout(() => {
+        unlockedContent.classList.add('active');
+        unlockedContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 450);
+    });
+
+    // 5. Seguimiento de las 4 postales volteadas
+    const cards = document.querySelectorAll('.flip-card');
+    const discovered = new Set();
+    const progressText = document.getElementById('progressText');
+    const portkeySection = document.getElementById('portkeySection');
+
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        card.classList.toggle('flipped');
+        if (navigator.vibrate) navigator.vibrate(20);
+
+        const idx = card.getAttribute('data-index');
+        if (!discovered.has(idx)) {
+          discovered.add(idx);
+          document.getElementById(`dot-${idx}`).classList.add('done');
+          progressText.textContent = `Recuerdos descubiertos (${discovered.size}/4)`;
+
+          if (discovered.size === 4) {
+            progressText.textContent = '✦ ¡Todos los destinos sellados! ✦';
+            portkeySection.classList.add('unlocked');
+            setTimeout(() => {
+              portkeySection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 350);
+          }
+        }
+      });
+    });
+
+    // 6. Traslador secreto (Portkey) que revela el Cupón VIP
+    const portkeyBtn = document.getElementById('portkeyBtn');
+    const flashOverlay = document.getElementById('flashOverlay');
+    const vipVoucher = document.getElementById('vipVoucher');
+
+    portkeyBtn.addEventListener('click', () => {
+      if (navigator.vibrate) navigator.vibrate([40, 40, 80]);
+      flashOverlay.classList.add('active');
+
+      setTimeout(() => {
+        portkeyBtn.style.display = 'none';
+        vipVoucher.classList.add('show');
+        flashOverlay.classList.remove('active');
+        launchConfetti(130);
+      }, 320);
+    });
+
+    // 7. Confeti ligero en Canvas
+    function launchConfetti(count = 80) {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const colors = ['#c9a24b', '#f3dfa2', '#1b6b7a', '#38bdf8', '#faf6ee'];
+      const pieces = Array.from({ length: count }, () => ({
+        x: canvas.width / 2,
+        y: canvas.height / 2.2,
+        vx: (Math.random() - 0.5) * 16,
+        vy: (Math.random() - 0.85) * 15,
+        size: 5 + Math.random() * 5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        alpha: 1
+      }));
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+
+        pieces.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.35;
+          p.alpha -= 0.014;
+
+          if (p.alpha > 0) {
+            active = true;
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+
+        if (active) requestAnimationFrame(animate);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      animate();
+    }
+  </script>
+</body>
+</html>
